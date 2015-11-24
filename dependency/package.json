@@ -1,0 +1,21 @@
+{
+    "private": true,
+    "dependencies": {
+        "chalk": "*",
+        "del": "*",
+        "gulp": "*",
+        "gulp-concat": "*",
+        "gulp-plumber": "*",
+        "gulp-rename": "*",
+        "gulp-uglify": "*",
+        "gulp-util": "*",
+        "gulp-watch": "*",
+        "gulp-webpack": "*",
+        "imports-loader": "*",
+        "merge-stream": "*",
+        "minimist": "*",
+        "moment": "*",
+        "object-assign": "*",
+        "run-sequence": "*"
+    }
+}

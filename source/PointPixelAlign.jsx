@@ -8,13 +8,13 @@ function main(gridWidth, gridHeight) {
     gridWidth == null && (gridWidth = 1);
     gridHeight == null && (gridHeight = 1);
 
-    var document = activeDocument;
+    var document = app.activeDocument;
     var selection = document.selection;
 
     // Go through all selected points.
 
     for (var i = 0, n = selection.length; i < n; i++) {
-        if (selection[i].typename === "PathItem") {
+        if (selection[i].typename === 'PathItem') {
             var pathPoints = selection[i].selectedPathPoints;
 
             for (var j = 0, m = pathPoints.length; j < m; j++) {
