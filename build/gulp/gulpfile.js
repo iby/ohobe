@@ -2,17 +2,19 @@
 
 'use strict';
 
+var configuration = require('./configuration/gulp');
+var guild = require('@ianbytchek/guild');
 var gulp = require('gulp');
-var runSequence = require('run-sequence');
+var replace = require('gulp-replace');
+var webpackConfiguration = require('./configuration/webpack');
 
-// Tasks are broken into separate modules.
-
-require('./gulp-build.js')();
-
-// Default task.
-
-gulp.task('default', function (callback) {
-    return runSequence(
-        'build',
-        callback);
+guild(gulp, {
+    build: {
+        webpack: {
+            source: configuration.path.source,
+            destination: configuration.path.product,
+            configuration: webpackConfiguration,
+            plugins: [guild.Plugin.DEFAULT, replace(/@see/g, '')]
+        }
+    }
 });

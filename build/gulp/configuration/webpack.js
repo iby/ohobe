@@ -9,7 +9,6 @@
 
 var gulpConfiguration = require('./gulp');
 var path = require('path');
-var webpack = require('webpack');
 var glob = require("glob");
 
 var context = path.join(gulpConfiguration.path.source);
