@@ -6,6 +6,7 @@
         "es5-shim": "*",
         "glob": "*",
         "gulp-replace": "*",
+        "JSON2": "*",
         "key": "*"
     }
 }

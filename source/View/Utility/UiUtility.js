@@ -94,6 +94,30 @@ UiUtility.createGroup = function (container, orientation, properties) {
 
 /**
  * @param container {*}
+ * @param [properties] {{value: bool}}
+ * @returns {*}
+ */
+UiUtility.createHorizontalGroup = function (container, properties) {
+    var group = container.add(Component.GROUP);
+    UiUtility.applyProperties(properties, group, container);
+    group.orientation = Orientation.ROW;
+    return group;
+};
+
+/**
+ * @param container {*}
+ * @param [properties] {{value: bool}}
+ * @returns {*}
+ */
+UiUtility.createVerticalGroup = function (container, properties) {
+    var group = container.add(Component.GROUP);
+    UiUtility.applyProperties(properties, group, container);
+    group.orientation = Orientation.COLUMN;
+    return group;
+};
+
+/**
+ * @param container {*}
  * @param [orientation] {string}
  * @param [properties] {{value: bool}}
  * @returns {*}

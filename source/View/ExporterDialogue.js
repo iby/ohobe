@@ -35,11 +35,11 @@ var spacingLarge = 20;
 
 function createControlBlock(container, model, callback) {
     var group = UiUtility.createGroup(container, Orientation.ROW, {alignment: Alignment.FILL_TOP});
-    var minSize = [100, controlHeight * 1.25];
+    var minimumSize = [100, controlHeight * 1.25];
 
-    group.exportButton = UiUtility.createButton(group, 'Export', {minSize: minSize, active: true});
-    group.saveButton = UiUtility.createButton(group, 'Save', {minSize: minSize});
-    group.cancelButton = UiUtility.createButton(group, 'Cancel', {minSize: minSize, alignment: Alignment.RIGHT_TOP});
+    group.exportButton = UiUtility.createButton(group, 'Export', {minimumSize: minimumSize, active: true});
+    group.saveButton = UiUtility.createButton(group, 'Save', {minimumSize: minimumSize});
+    group.cancelButton = UiUtility.createButton(group, 'Cancel', {minimumSize: minimumSize, alignment: Alignment.RIGHT_TOP});
 
     // Event handling.
 
@@ -113,32 +113,46 @@ function createArtboardOptionsBlock(container, model) {
 
     var leftGroup = UiUtility.createGroup(group, Orientation.COLUMN, leftGroupProperties);
     var rightGroup = UiUtility.createGroup(group, Orientation.COLUMN, rightGroupProperties);
-    var targetGroup = UiUtility.createGroup(leftGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP});
+    var targetGroup = UiUtility.createGroup(leftGroup, Orientation.COLUMN, {alignment: Alignment.FILL_TOP, alignChildren: Alignment.FILL_TOP});
     var scalingGroup = UiUtility.createGroup(rightGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP});
 
     UiUtility.createStaticText(targetGroup, 'Artboards:');
     UiUtility.createRadioButton(targetGroup, 'All', {value: true});
     UiUtility.createRadioButton(targetGroup, 'Selected (\u2026)'); // Unicode for …
+    targetGroup.onlyPrefixCheckbox = UiUtility.createCheckBox(targetGroup, 'Only with + prefix', {value: model.artboardOnlyWithPrefix});
+    targetGroup.skipPrefixCheckbox = UiUtility.createCheckBox(targetGroup, 'Skip with - prefix', {value: model.artboardSkipWithPrefix});
 
     scalingGroup.scaling = model.artboardScaling;
-    scalingGroup.checkbox = UiUtility.createCheckBox(scalingGroup, 'Multi-scaling (prefix, scale):');
+    scalingGroup.checkbox = UiUtility.createCheckBox(scalingGroup, 'Multi-scaling (prefix, scale):', {value: model.artboardScalingEnabled});
     scalingGroup.group = UiUtility.createGroup(scalingGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP, spacing: spacingSmall});
-    scalingGroup.button = UiUtility.createButton(scalingGroup, '+', {size: [controlHeight, controlHeight]});
+    scalingGroup.button = UiUtility.createButton(scalingGroup, '+', {size: [controlHeight, controlHeight], enabled: model.artboardScalingEnabled});
 
-    if (scalingGroup.scaling.length === 0) {
-        createScalingOptionBlock(scalingGroup.group);
-    } else {
-        for (var i = 0, n = scalingGroup.scaling.length; i < n; i++) {
-            createScalingOptionBlock(scalingGroup.group, scalingGroup.scaling[i]);
-        }
-    }
+    // Event handling.
+
+    targetGroup.onlyPrefixCheckbox.onClick = function () {
+        model.artboardOnlyWithPrefix = this.value;
+    };
+
+    targetGroup.skipPrefixCheckbox.onClick = function () {
+        model.artboardSkipWithPrefix = this.value;
+    };
+
+    scalingGroup.checkbox.onClick = function () {
+        scalingGroup.button.enabled = model.artboardScalingEnabled = this.value;
+        updateScalingOptionBlocks(scalingGroup.group, scalingGroup.scaling, model.artboardScalingEnabled);
+        this.window.layout.layout(true);
+    };
 
     // Todo: use the previous prefix when adding it.
 
     scalingGroup.button.onClick = function () {
-        createScalingOptionBlock(this.parent.group);
+        createScalingOptionBlock(this.parent.group, null, true);
         this.window.layout.layout(true);
     };
+
+    // Finally…
+
+    createScalingOptionBlocks(scalingGroup.group, scalingGroup.scaling, model.artboardScalingEnabled);
 
     return group;
 }
@@ -159,38 +173,59 @@ function createLayerOptionsBlock(container, model) {
     UiUtility.createRadioButton(targetGroup, 'Selected (\u2026)'); // Unicode for …
 
     scalingGroup.scaling = model.layerScaling;
-    scalingGroup.checkbox = UiUtility.createCheckBox(scalingGroup, 'Multi-scaling (prefix, scale):');
+    scalingGroup.checkbox = UiUtility.createCheckBox(scalingGroup, 'Multi-scaling (prefix, scale):', {value: model.layerScalingEnabled});
     scalingGroup.group = UiUtility.createGroup(scalingGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP, spacing: spacingSmall});
-    scalingGroup.button = UiUtility.createButton(scalingGroup, '+', {size: [controlHeight, controlHeight]});
+    scalingGroup.button = UiUtility.createButton(scalingGroup, '+', {size: [controlHeight, controlHeight], enabled: model.artboardScalingEnabled});
 
-    if (scalingGroup.scaling.length === 0) {
-        createScalingOptionBlock(scalingGroup.group);
-    } else {
-        for (var i = 0, n = scalingGroup.scaling.length; i < n; i++) {
-            createScalingOptionBlock(scalingGroup.group, scalingGroup.scaling[i]);
-        }
-    }
+    // Event handling.
 
-    scalingGroup.button.onClick = function () {
-        createScalingOptionBlock(this.parent.group);
+    scalingGroup.checkbox.onClick = function () {
+        scalingGroup.button.enabled = model.layerScalingEnabled = this.value;
+        updateScalingOptionBlocks(scalingGroup.group, scalingGroup.scaling, model.layerScalingEnabled);
         this.window.layout.layout(true);
     };
+
+    scalingGroup.button.onClick = function () {
+        createScalingOptionBlock(this.parent.group, null, true);
+        this.window.layout.layout(true);
+    };
+
+    // Finally…
+
+    createScalingOptionBlocks(scalingGroup.group, scalingGroup.scaling, model.layerScalingEnabled);
 
     return group;
 }
 
-function createScalingOptionBlock(container, scaling) {
+function updateScalingOptionBlocks(container, scaling, enabled) {
+    while (container.children.length > 0) {
+        container.remove(0);
+    }
+    createScalingOptionBlocks(container, scaling, enabled);
+}
+
+function createScalingOptionBlocks(container, scaling, enabled) {
+    if (scaling.length === 0) {
+        createScalingOptionBlock(container, null, enabled);
+    } else {
+        for (var i = 0, n = scaling.length; i < n; i++) {
+            createScalingOptionBlock(container, scaling[i], enabled);
+        }
+    }
+}
+
+function createScalingOptionBlock(container, scaling, enabled) {
     var group = UiUtility.createGroup(container, Orientation.ROW, {alignChildren: Alignment.LEFT_TOP, spacing: spacingSmall});
     scaling == null && (container.parent.scaling.push(scaling = {prefix: '\u00D7', value: 1}));
 
-    UiUtility.createButton(group, '-', {size: [controlHeight, controlHeight]}).onClick = function () {
+    UiUtility.createButton(group, '-', {size: [controlHeight, controlHeight], enabled: enabled}).onClick = function () {
         container.remove(group);
         container.parent.scaling.splice(container.parent.scaling.indexOf(scaling), 1);
         container.window.layout.layout(true);
     };
 
-    group.prefixTextfield = UiUtility.createTextfield(group, scaling.prefix, {size: [controlHeight * 2, controlHeight], justify: 'center'}); // Unicode for ×
-    group.scaleTextfield = UiUtility.createTextfield(group, scaling.value, {size: [50, controlHeight], justify: 'center'});
+    group.prefixTextfield = UiUtility.createTextfield(group, scaling.prefix, {size: [controlHeight * 2, controlHeight], enabled: enabled, justify: 'center'}); // Unicode for ×
+    group.scaleTextfield = UiUtility.createTextfield(group, scaling.value, {size: [50, controlHeight], enabled: enabled, justify: 'center'});
 
     return group;
 }

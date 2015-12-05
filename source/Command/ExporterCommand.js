@@ -77,12 +77,21 @@ ExporterCommand.prototype = {
         var folder = new Folder(model.path);
         folder.exists || folder.create();
 
-        //
+        var onlyPrefix;
+        var skipPrefix;
+        var exportable;
+
+        // Check what category we're dealing with and export.
 
         if (model.category === ExportCategory.ARTBOARD) {
+            onlyPrefix = model.artboardOnlyWithPrefix ? '+' : null;
+            skipPrefix = model.artboardSkipWithPrefix ? '-' : null;
+
             if (model.target === ExportTarget.ALL) {
                 for (var i = 0, n = document.artboards.length; i < n; i++) {
-                    this.exportItem(document, i, null, model.path);
+                    exportable = onlyPrefix == null || document.artboards[i].name.slice(0, onlyPrefix.length) === onlyPrefix;
+                    exportable = skipPrefix == null || document.artboards[i].name.slice(0, skipPrefix.length) !== skipPrefix;
+                    exportable && this.exportItem(document, i, null, model.path);
                     progressCallback((i + 1) / n);
                 }
             } else if (model.target === ExportTarget.SELECTED) {
