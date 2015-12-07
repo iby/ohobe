@@ -7,7 +7,8 @@ var Alignment = require('../Constant/Alignment');
 var Component = require('../Constant/Component');
 var Orientation = require('../Constant/Orientation');
 var UiUtility = require('./Utility/UiUtility');
-var ExportCategory = require('../Constant/ExportCategory.js');
+var ExportCategory = require('../Constant/ExportCategory');
+var ExportTarget = require('../Constant/ExportTarget');
 
 function ExporterDialogue(model, callback) {
     var dialogue = new Window('dialog', 'Exporter \u2013 Ohobe');
@@ -117,8 +118,8 @@ function createArtboardOptionsBlock(container, model) {
     var scalesGroup = UiUtility.createGroup(rightGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP});
 
     UiUtility.createStaticText(targetGroup, 'Artboards:');
-    UiUtility.createRadioButton(targetGroup, 'All', {value: true});
-    UiUtility.createRadioButton(targetGroup, 'Selected (\u2026)'); // Unicode for …
+    targetGroup.allButton = UiUtility.createRadioButton(targetGroup, 'All', {value: model.artboard.target === ExportTarget.ALL});
+    targetGroup.activeButton = UiUtility.createRadioButton(targetGroup, 'Active', {value: model.artboard.target === ExportTarget.ACTIVE});
     targetGroup.onlyWithPrefixCheckbox = UiUtility.createCheckBox(targetGroup, 'Only with + prefix', {value: model.artboard.onlyWithPrefix});
     targetGroup.skipWithPrefixCheckbox = UiUtility.createCheckBox(targetGroup, 'Skip with - prefix', {value: model.artboard.skipWithPrefix});
 
@@ -129,13 +130,10 @@ function createArtboardOptionsBlock(container, model) {
 
     // Event handling.
 
-    targetGroup.onlyWithPrefixCheckbox.onClick = function () {
-        model.artboard.onlyWithPrefix = this.value;
-    };
-
-    targetGroup.skipWithPrefixCheckbox.onClick = function () {
-        model.artboard.skipWithPrefix = this.value;
-    };
+    targetGroup.allButton.onClick = function () { model.artboard.target = ExportTarget.ALL };
+    targetGroup.activeButton.onClick = function () { model.artboard.target = ExportTarget.ACTIVE };
+    targetGroup.onlyWithPrefixCheckbox.onClick = function () { model.artboard.onlyWithPrefix = this.value };
+    targetGroup.skipWithPrefixCheckbox.onClick = function () { model.artboard.skipWithPrefix = this.value };
 
     scalesGroup.checkbox.onClick = function () {
         scalesGroup.button.enabled = model.artboard.scale = this.value;
@@ -169,8 +167,8 @@ function createLayerOptionsBlock(container, model) {
     var scalesGroup = UiUtility.createGroup(rightGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP});
 
     UiUtility.createStaticText(targetGroup, 'Layers:');
-    UiUtility.createRadioButton(targetGroup, 'All', {value: true});
-    UiUtility.createRadioButton(targetGroup, 'Selected (\u2026)'); // Unicode for …
+    targetGroup.allButton = UiUtility.createRadioButton(targetGroup, 'All', {value: model.layer.target === ExportTarget.ALL});
+    targetGroup.selectedButton = UiUtility.createRadioButton(targetGroup, 'Selected', {value: model.layer.target === ExportTarget.SELECTED});
     targetGroup.recursiveCheckbox = UiUtility.createCheckBox(targetGroup, 'Recursive', {value: model.layer.recursive});
     targetGroup.onlyWithPrefixCheckbox = UiUtility.createCheckBox(targetGroup, 'Only with + prefix', {value: model.layer.onlyWithPrefix});
     targetGroup.skipWithPrefixCheckbox = UiUtility.createCheckBox(targetGroup, 'Skip with - prefix', {value: model.layer.skipWithPrefix});
@@ -182,13 +180,10 @@ function createLayerOptionsBlock(container, model) {
 
     // Event handling.
 
-    targetGroup.recursiveCheckbox.onClick = function () {
-        model.layer.recursive = this.value;
-    };
-
-    targetGroup.onlyWithPrefixCheckbox.onClick = function () {
-        model.layer.onlyWithPrefix = this.value;
-    };
+    targetGroup.allButton.onClick = function () { model.layer.target = ExportTarget.ALL };
+    targetGroup.selectedButton.onClick = function () { model.layer.target = ExportTarget.SELECTED };
+    targetGroup.recursiveCheckbox.onClick = function () { model.layer.recursive = this.value };
+    targetGroup.onlyWithPrefixCheckbox.onClick = function () { model.layer.onlyWithPrefix = this.value };
 
     targetGroup.skipWithPrefixCheckbox.onClick = function () {
         model.layer.skipWithPrefix = this.value;

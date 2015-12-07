@@ -3,8 +3,8 @@
 'use strict';
 
 var ExportCategory = require('../Constant/ExportCategory');
-var ExportTarget = require('../Constant/ExportTarget.js');
-var DataType = require('../Constant/DataType.js');
+var ExportTarget = require('../Constant/ExportTarget');
+var DataType = require('../Constant/DataType');
 
 function ExporterCommand() {}
 
@@ -47,20 +47,25 @@ ExporterCommand.prototype = {
         exportOptions.transparency = true;
         exportOptions.artBoardClipping = true;
 
-        // We add a transparent shape that represents the export area. This is necessary when exporting artboards to preserve
-        // artboard size, otherwise it will be shrunk to the size of the artwork, which might be smaller than the artboard
-        // itself. Oh for fuck sake Adobe… did a kindergarden intern wrote the fucking rectangle class and methods? A drunk
-        // hobo makes more sense than this shit. Jeeesaaas…
+        if (item === artboard) {
 
-        var exportAreaLayer = document.layers.add();
-        var exportAreaPath = exportAreaLayer.pathItems.rectangle(rectangle[1], rectangle[0], rectangle[2] - rectangle[0], rectangle[1] - rectangle[3]);
+            // We add a transparent shape that represents the export area. This is necessary when exporting artboards to preserve
+            // artboard size, otherwise it will be shrunk to the size of the artwork, which might be smaller than the artboard
+            // itself. Oh for fuck sake Adobe… did a kindergarten intern wrote the fucking rectangle class and methods? A drunk
+            // hobo makes more sense than this shit. Jeeesaaas…
 
-        exportAreaLayer.name = 'Exporter (Ohobe)';
-        exportAreaPath.name = 'Area';
-        exportAreaPath.fillColor = new RGBColor(0, 0, 0);
-        exportAreaPath.opacity = 0;
+            var exportAreaLayer = document.layers.add();
+            var exportAreaPath = exportAreaLayer.pathItems.rectangle(rectangle[1], rectangle[0], rectangle[2] - rectangle[0], rectangle[1] - rectangle[3]);
 
-        document.exportFile(new File(path + '/' + artboard.name + '.png'), ExportType.PNG24, exportOptions);
+            exportAreaLayer.name = 'Exporter (Ohobe)';
+            exportAreaPath.name = 'Area';
+            exportAreaPath.fillColor = new RGBColor(0, 0, 0);
+            exportAreaPath.opacity = 0;
+
+            document.exportFile(new File(path + '/' + artboard.name + '.png'), ExportType.PNG24, exportOptions);
+        } else {
+            document.artboards.add(rectangle);
+        }
 
         app.undo();
     },
@@ -87,7 +92,7 @@ ExporterCommand.prototype = {
             onlyPrefix = model.artboard.onlyWithPrefix ? '+' : null;
             skipPrefix = model.artboard.skipWithPrefix ? '-' : null;
 
-            if (model.target === ExportTarget.ALL) {
+            if (model.artboard.target === ExportTarget.ALL) {
                 for (var i = 0, n = document.artboards.length; i < n; i++) {
                     exportable = onlyPrefix == null || document.artboards[i].name.slice(0, onlyPrefix.length) === onlyPrefix;
                     exportable = skipPrefix == null || document.artboards[i].name.slice(0, skipPrefix.length) !== skipPrefix;
@@ -98,6 +103,12 @@ ExporterCommand.prototype = {
                 this.exportItem(document, null, null, model.path);
                 progressCallback(1);
             }
+        } else if (model.category === ExportCategory.LAYER) {
+            if (model.layer.target === ExportTarget.SELECTED) {
+                alert(document.selection);
+            }
+        } else {
+            throw new Error();
         }
     }
 };

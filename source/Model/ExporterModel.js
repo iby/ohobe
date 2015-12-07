@@ -4,9 +4,9 @@
 
 var XmpUtility = require('../Utility/XmpUtility');
 var JSON2 = require('JSON2');
-var DataType = require('../Constant/DataType.js');
-var ExportCategory = require('../Constant/ExportCategory.js');
-var ExportTarget = require('../Constant/ExportTarget.js');
+var DataType = require('../Constant/DataType');
+var ExportCategory = require('../Constant/ExportCategory');
+var ExportTarget = require('../Constant/ExportTarget');
 
 var XMP_NAMESPACE = 'ohobe-exporter';
 
@@ -23,11 +23,6 @@ ExporterModel.prototype = {
      * Last used export path.
      */
     path: null,
-
-    /**
-     * What to export within group (all items, selected items).
-     */
-    target: null,
 
     artboard: {
 
@@ -49,7 +44,12 @@ ExporterModel.prototype = {
         /**
          * Whether to ignore prefixed artboards.
          */
-        skipWithPrefix: null
+        skipWithPrefix: null,
+
+        /**
+         * What artboards to export.
+         */
+        target: null
 
     },
 
@@ -78,7 +78,12 @@ ExporterModel.prototype = {
         /**
          * Whether to ignore prefixed layers.
          */
-        skipWithPrefix: null
+        skipWithPrefix: null,
+
+        /**
+         * What layers to export.
+         */
+        target: null
 
     },
 
@@ -102,7 +107,6 @@ ExporterModel.prototype = {
 
         (data.category == null || Object.values(ExportCategory).indexOf(data.category) === -1) && (data.category = ExportCategory.ARTBOARD);
         (data.path == null || data.path === '') && (data.path = Folder.decode(document.fullName.exists ? new Folder(document.fullName).parent.fullName : Folder.desktop) + '/export');
-        (data.target == null || Object.values(ExportTarget).indexOf(data.target) === -1) && (data.target = ExportTarget.ALL);
 
         // Normalise artboard data.
 
@@ -111,6 +115,7 @@ ExporterModel.prototype = {
         (data.artboard.scale == null || typeof data.artboard.scale !== DataType.BOOLEAN) && (data.artboard.scale = false);
         (data.artboard.scales == null || typeof data.artboard.scales !== DataType.OBJECT || data.artboard.scales.constructor !== Array) && (data.artboard.scales = []);
         (data.artboard.skipWithPrefix == null || typeof data.artboard.skipWithPrefix !== DataType.BOOLEAN) && (data.artboard.skipWithPrefix = false);
+        (data.artboard.target == null || Object.values(ExportTarget).indexOf(data.artboard.target) === -1) && (data.artboard.target = ExportTarget.ALL);
 
         // Normalise layer data.
 
@@ -120,18 +125,19 @@ ExporterModel.prototype = {
         (data.layer.scale == null || typeof data.layer.scale !== DataType.BOOLEAN) && (data.layer.scale = false);
         (data.layer.scales == null || typeof data.layer.scales !== DataType.OBJECT || data.layer.scales.constructor !== Array) && (data.layer.scales = []);
         (data.layer.skipWithPrefix == null || typeof data.layer.skipWithPrefix !== DataType.BOOLEAN) && (data.layer.skipWithPrefix = false);
+        (data.layer.target == null || Object.values(ExportTarget).indexOf(data.layer.target) === -1) && (data.layer.target = ExportTarget.ALL);
 
         // Update model with loaded data.
 
         this.category = data.category;
         this.path = data.path;
-        this.target = data.target;
 
         this.artboard = {};
         this.artboard.onlyWithPrefix = data.artboard.onlyWithPrefix;
         this.artboard.scale = data.artboard.scale;
         this.artboard.scales = data.artboard.scales;
         this.artboard.skipWithPrefix = data.artboard.skipWithPrefix;
+        this.artboard.target = data.artboard.target;
 
         this.layer = {};
         this.layer.onlyWithPrefix = data.layer.onlyWithPrefix;
@@ -139,6 +145,7 @@ ExporterModel.prototype = {
         this.layer.scale = data.layer.scale;
         this.layer.scales = data.layer.scales;
         this.layer.skipWithPrefix = data.layer.skipWithPrefix;
+        this.layer.target = data.layer.target;
 
         return this;
     },
@@ -159,7 +166,8 @@ ExporterModel.prototype = {
                 onlyWithPrefix: this.artboard.onlyWithPrefix,
                 scale: this.artboard.scale,
                 scales: this.artboard.scales,
-                skipWithPrefix: this.artboard.skipWithPrefix
+                skipWithPrefix: this.artboard.skipWithPrefix,
+                target: this.artboard.target
             },
 
             layer: {
@@ -167,7 +175,8 @@ ExporterModel.prototype = {
                 recursive: this.layer.recursive,
                 scale: this.layer.scale,
                 scales: this.layer.scales,
-                skipWithPrefix: this.layer.skipWithPrefix
+                skipWithPrefix: this.layer.skipWithPrefix,
+                target: this.layer.target
             }
         };
 
