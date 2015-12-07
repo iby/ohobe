@@ -84,8 +84,8 @@ ExporterCommand.prototype = {
         // Check what category we're dealing with and export.
 
         if (model.category === ExportCategory.ARTBOARD) {
-            onlyPrefix = model.artboardOnlyWithPrefix ? '+' : null;
-            skipPrefix = model.artboardSkipWithPrefix ? '-' : null;
+            onlyPrefix = model.artboard.onlyWithPrefix ? '+' : null;
+            skipPrefix = model.artboard.skipWithPrefix ? '-' : null;
 
             if (model.target === ExportTarget.ALL) {
                 for (var i = 0, n = document.artboards.length; i < n; i++) {

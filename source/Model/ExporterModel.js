@@ -15,49 +15,9 @@ function ExporterModel() {}
 ExporterModel.prototype = {
 
     /**
-     * Whether to export only prefixed artboards.
-     */
-    artboardOnlyWithPrefix: null,
-
-    /**
-     * Artboard scaling, new line separated prefix and scale.
-     */
-    artboardScaling: null,
-
-    /**
-     * Whether artboard scaling is enabled or not.
-     */
-    artboardScalingEnabled: null,
-
-    /**
-     * Whether to ignore prefixed artboards.
-     */
-    artboardSkipWithPrefix: null,
-
-    /**
      * What to export (artboard, layer, symbol).
      */
     category: null,
-
-    /**
-     * Whether to export only prefixed layers.
-     */
-    layerOnlyWithPrefix: null,
-
-    /**
-     * Same as artboard.
-     */
-    layerScaling: null,
-
-    /**
-     * Same as artboard.
-     */
-    layerScalingEnabled: null,
-
-    /**
-     * Whether to ignore prefixed layers.
-     */
-    layerSkipWithPrefix: null,
 
     /**
      * Last used export path.
@@ -69,6 +29,59 @@ ExporterModel.prototype = {
      */
     target: null,
 
+    artboard: {
+
+        /**
+         * Whether to export only prefixed artboards.
+         */
+        onlyWithPrefix: null,
+
+        /**
+         * Whether export multiple scales.
+         */
+        scale: null,
+
+        /**
+         * Scale prefixes and values.
+         */
+        scales: null,
+
+        /**
+         * Whether to ignore prefixed artboards.
+         */
+        skipWithPrefix: null
+
+    },
+
+    layer: {
+
+        /**
+         * Whether to export only prefixed layers.
+         */
+        onlyWithPrefix: null,
+
+        /**
+         * Whether to process layers recursively.
+         */
+        recursive: null,
+
+        /**
+         * Whether export multiple scales.
+         */
+        scale: null,
+
+        /**
+         * Scale prefixes and values.
+         */
+        scales: null,
+
+        /**
+         * Whether to ignore prefixed layers.
+         */
+        skipWithPrefix: null
+
+    },
+
     /**
      * Loads data.
      */
@@ -76,39 +89,56 @@ ExporterModel.prototype = {
         var data = XmpUtility.load(document, XMP_NAMESPACE);
 
         if (typeof data.json === DataType.STRING) {
-            data = JSON2.parse(unescape(data.json));
+            try {
+                data = JSON2.parse(unescape(data.json));
+            } catch (error) {
+                data = {};
+            }
         } else {
             data = {};
         }
 
         // Normalise loaded data.
 
-        (typeof data.artboardOnlyWithPrefix !== DataType.BOOLEAN) && (data.artboardOnlyWithPrefix = false);
-        (data.artboardScaling == null || data.artboardScaling.constructor !== Array) && (data.artboardScaling = []);
-        (typeof data.artboardScalingEnabled !== DataType.BOOLEAN) && (data.artboardScalingEnabled = false);
-        (typeof data.artboardSkipWithPrefix !== DataType.BOOLEAN) && (data.artboardSkipWithPrefix = false);
         (data.category == null || Object.values(ExportCategory).indexOf(data.category) === -1) && (data.category = ExportCategory.ARTBOARD);
-        (typeof data.layerOnlyWithPrefix !== DataType.BOOLEAN) && (data.layerOnlyWithPrefix = false);
-        (data.layerScaling == null || data.layerScaling.constructor !== Array) && (data.layerScaling = []);
-        (typeof data.layerScalingEnabled !== DataType.BOOLEAN) && (data.layerScalingEnabled = false);
-        (typeof data.layerSkipWithPrefix !== DataType.BOOLEAN) && (data.layerSkipWithPrefix = false);
-
         (data.path == null || data.path === '') && (data.path = Folder.decode(document.fullName.exists ? new Folder(document.fullName).parent.fullName : Folder.desktop) + '/export');
         (data.target == null || Object.values(ExportTarget).indexOf(data.target) === -1) && (data.target = ExportTarget.ALL);
 
+        // Normalise artboard data.
+
+        (data.artboard == null || typeof data.artboard !== DataType.OBJECT) && (data.artboard = {});
+        (data.artboard.onlyWithPrefix == null || typeof data.artboard.onlyWithPrefix !== DataType.BOOLEAN) && (data.artboard.onlyWithPrefix = false);
+        (data.artboard.scale == null || typeof data.artboard.scale !== DataType.BOOLEAN) && (data.artboard.scale = false);
+        (data.artboard.scales == null || typeof data.artboard.scales !== DataType.OBJECT || data.artboard.scales.constructor !== Array) && (data.artboard.scales = []);
+        (data.artboard.skipWithPrefix == null || typeof data.artboard.skipWithPrefix !== DataType.BOOLEAN) && (data.artboard.skipWithPrefix = false);
+
+        // Normalise layer data.
+
+        (data.layer == null || typeof data.layer !== DataType.OBJECT) && (data.layer = {});
+        (data.layer.onlyWithPrefix == null || typeof data.layer.onlyWithPrefix !== DataType.BOOLEAN) && (data.layer.onlyWithPrefix = false);
+        (data.layer.recursive == null || typeof data.layer.recursive !== DataType.BOOLEAN) && (data.layer.recursive = false);
+        (data.layer.scale == null || typeof data.layer.scale !== DataType.BOOLEAN) && (data.layer.scale = false);
+        (data.layer.scales == null || typeof data.layer.scales !== DataType.OBJECT || data.layer.scales.constructor !== Array) && (data.layer.scales = []);
+        (data.layer.skipWithPrefix == null || typeof data.layer.skipWithPrefix !== DataType.BOOLEAN) && (data.layer.skipWithPrefix = false);
+
         // Update model with loaded data.
 
-        this.artboardOnlyWithPrefix = data.artboardOnlyWithPrefix;
-        this.artboardScaling = data.artboardScaling;
-        this.artboardScalingEnabled = data.artboardScalingEnabled;
-        this.artboardSkipWithPrefix = data.artboardSkipWithPrefix;
         this.category = data.category;
-        this.layerOnlyWithPrefix = data.layerOnlyWithPrefix;
-        this.layerScaling = data.layerScaling;
-        this.layerScalingEnabled = data.layerScalingEnabled;
-        this.layerSkipWithPrefix = data.layerSkipWithPrefix;
         this.path = data.path;
         this.target = data.target;
+
+        this.artboard = {};
+        this.artboard.onlyWithPrefix = data.artboard.onlyWithPrefix;
+        this.artboard.scale = data.artboard.scale;
+        this.artboard.scales = data.artboard.scales;
+        this.artboard.skipWithPrefix = data.artboard.skipWithPrefix;
+
+        this.layer = {};
+        this.layer.onlyWithPrefix = data.layer.onlyWithPrefix;
+        this.layer.recursive = data.layer.recursive;
+        this.layer.scale = data.layer.scale;
+        this.layer.scales = data.layer.scales;
+        this.layer.skipWithPrefix = data.layer.skipWithPrefix;
 
         return this;
     },
@@ -121,17 +151,24 @@ ExporterModel.prototype = {
         // Extract data from the model.
 
         var data = {
-            artboardOnlyWithPrefix: this.artboardOnlyWithPrefix,
-            artboardScaling: this.artboardScaling,
-            artboardScalingEnabled: this.artboardScalingEnabled,
-            artboardSkipWithPrefix: this.artboardSkipWithPrefix,
             category: this.category,
-            layerOnlyWithPrefix: this.layerOnlyWithPrefix,
-            layerScaling: this.layerScaling,
-            layerScalingEnabled: this.layerScalingEnabled,
-            layerSkipWithPrefix: this.layerSkipWithPrefix,
             path: this.path,
-            target: this.target
+            target: this.target,
+
+            artboard: {
+                onlyWithPrefix: this.artboard.onlyWithPrefix,
+                scale: this.artboard.scale,
+                scales: this.artboard.scales,
+                skipWithPrefix: this.artboard.skipWithPrefix
+            },
+
+            layer: {
+                onlyWithPrefix: this.layer.onlyWithPrefix,
+                recursive: this.layer.recursive,
+                scale: this.layer.scale,
+                scales: this.layer.scales,
+                skipWithPrefix: this.layer.skipWithPrefix
+            }
         };
 
         // Normalise / serialise data.
