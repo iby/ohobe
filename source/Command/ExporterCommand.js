@@ -1,4 +1,4 @@
-/*global Folder,Artboard,File*/
+/*global Artboard,Folder,File,Layer*/
 
 'use strict';
 
@@ -9,6 +9,45 @@ var DataType = require('../Constant/DataType');
 function ExporterCommand() {}
 
 ExporterCommand.prototype = {
+
+    /**
+     * @param layer {Layer}
+     * @returns {Array}
+     */
+    getVisibleBounds: function (layer) {
+
+        // Oh Adobe, thanks for no way of getting layer's visible bounds. We go though each page item and
+        // workout the maximum rectangle – only writing this in binary would make it worse… And then there
+        // are layers also. And here comes the flipped y axis, someone kill me please.
+
+        var minX = Number.POSITIVE_INFINITY;
+        var minY = Number.NEGATIVE_INFINITY;
+        var maxX = Number.NEGATIVE_INFINITY;
+        var maxY = Number.POSITIVE_INFINITY;
+        var rectangle;
+
+        for (var i = 0, n = layer.pageItems.length; i < n; i++) {
+            if (!layer.pageItems[i].hidden) {
+                rectangle = layer.pageItems[i].visibleBounds;
+                rectangle[0] < minX && (minX = rectangle[0]);
+                rectangle[2] > maxX && (maxX = rectangle[2]);
+                rectangle[1] > minY && (minY = rectangle[1]);
+                rectangle[3] < maxY && (maxY = rectangle[3]);
+            }
+        }
+
+        for (i = 0, n = layer.layers.length; i < n; i++) {
+            if (layer.visible) {
+                rectangle = this.getVisibleBounds(layer.layers[i]);
+                rectangle[0] < minX && (minX = rectangle[0]);
+                rectangle[2] > maxX && (maxX = rectangle[2]);
+                rectangle[1] > minY && (minY = rectangle[1]);
+                rectangle[3] < maxY && (maxY = rectangle[3]);
+            }
+        }
+
+        return [minX, minY, maxX, maxY];
+    },
 
     /**
      * @param document {Document}
@@ -34,8 +73,11 @@ ExporterCommand.prototype = {
         if (item == null) {
             item = artboard;
             rectangle = item.artboardRect;
-        } else if (item.prototype === Artboard && item !== artboard) {
-            throw new Error();
+        } else if (item.constructor === Layer) {
+            rectangle = this.getVisibleBounds(item);
+        } else if (item.constructor === Artboard) {
+            if (item !== artboard) { throw new Error() }
+            rectangle = item.artboardRect;
         } else {
             rectangle = item.visibleBounds;
         }
@@ -46,6 +88,10 @@ ExporterCommand.prototype = {
         exportOptions.antiAliasing = true;
         exportOptions.transparency = true;
         exportOptions.artBoardClipping = true;
+
+        // Not this can only go two ways – we're dealing with an entire artboard or a selection. In first case we simply export file
+        // with that artboard selected, trimming the contents. In second case we kind of do the same but create a temporary artboard
+        // to make sure the contents are clipped.
 
         if (item === artboard) {
 
@@ -61,11 +107,15 @@ ExporterCommand.prototype = {
             exportAreaPath.name = 'Area';
             exportAreaPath.fillColor = new RGBColor(0, 0, 0);
             exportAreaPath.opacity = 0;
-
-            document.exportFile(new File(path + '/' + artboard.name + '.png'), ExportType.PNG24, exportOptions);
         } else {
             document.artboards.add(rectangle);
         }
+
+        var filename = item.name === '' ? item.toString() : item.name;
+
+        // And finally… unicorns and all the magic things!
+
+        document.exportFile(new File(path + '/' + filename + '.png'), ExportType.PNG24, exportOptions);
 
         app.undo();
     },
@@ -82,33 +132,131 @@ ExporterCommand.prototype = {
         var folder = new Folder(model.path);
         folder.exists || folder.create();
 
-        var onlyPrefix;
-        var skipPrefix;
+        var onlyWithPrefix, onlyWithPrefixLength = 1;
+        var skipWithPrefix, skipWithPrefixLength = 1;
         var exportable;
+        var recursor;
+        var i, n;
 
         // Check what category we're dealing with and export.
 
         if (model.category === ExportCategory.ARTBOARD) {
-            onlyPrefix = model.artboard.onlyWithPrefix ? '+' : null;
-            skipPrefix = model.artboard.skipWithPrefix ? '-' : null;
+            var artboards = document.artboards;
+
+            onlyWithPrefix = model.artboard.onlyWithPrefix ? '+' : null;
+            skipWithPrefix = model.artboard.skipWithPrefix ? '-' : null;
 
             if (model.artboard.target === ExportTarget.ALL) {
-                for (var i = 0, n = document.artboards.length; i < n; i++) {
-                    exportable = onlyPrefix == null || document.artboards[i].name.slice(0, onlyPrefix.length) === onlyPrefix;
-                    exportable = skipPrefix == null || document.artboards[i].name.slice(0, skipPrefix.length) !== skipPrefix;
+                for (i = 0, n = artboards.length; i < n; i++) {
+                    exportable = onlyWithPrefix == null || artboards[i].name.slice(0, onlyWithPrefixLength) === onlyWithPrefix;
+                    exportable = skipWithPrefix == null || artboards[i].name.slice(0, skipWithPrefixLength) !== skipWithPrefix;
                     exportable && this.exportItem(document, i, null, model.path);
                     progressCallback((i + 1) / n);
                 }
             } else if (model.target === ExportTarget.SELECTED) {
                 this.exportItem(document, null, null, model.path);
                 progressCallback(1);
+            } else {
+                throw new Error('Unknown artboard export target.');
             }
         } else if (model.category === ExportCategory.LAYER) {
-            if (model.layer.target === ExportTarget.SELECTED) {
-                alert(document.selection);
+            var exportableItems = [];
+            var recursive = model.layer.recursive;
+
+            onlyWithPrefix = model.layer.onlyWithPrefix ? '+' : null;
+            skipWithPrefix = model.layer.skipWithPrefix ? '-' : null;
+
+            recursor = function (layers, selectedOnly) {
+                var exportableItems = [];
+
+                for (var i = 0, n = layers.length; i < n; i++) {
+                    var layer = layers[i];
+
+                    // Oh Adobe, why `hasSelectedArtwork` not working on nested layers???… Thanks to that we must manually check if that's the case.
+
+                    exportable = true;
+                    exportable && onlyWithPrefix === true && (exportable = layer.name.slice(0, onlyWithPrefixLength) === onlyWithPrefix);
+                    exportable && skipWithPrefix === true && (exportable = layer.name.slice(0, skipWithPrefixLength) !== skipWithPrefix);
+
+                    // If this layer is exportable, we add it to the list, otherwise we continue recursing.
+
+                    if (exportable === false) {
+                        continue;
+                    }
+
+                    // Now things gets really weird. The layer can contain other layers and page items, though the stuff you see in the
+                    // layers panel look plain and simple, in reality they are the exact opposite.
+
+                    var visibleSublayerCount = 0;
+                    var selectedSublayers = [];
+
+                    for (var j = 0, m = layer.layers.length; j < m; j++) {
+                        var sublayer = layer.layers[j];
+                        var sublayerExportableItems;
+
+                        if (sublayer.visible) {
+                            visibleSublayerCount++;
+
+                            // Embrace yourself… and check if that sublayer is fully selected. Knowing that we can establish whether this layer
+                            // is also fully selected or whether we're dealing with individual page items.
+
+                            if ((sublayerExportableItems = recursor([sublayer], selectedOnly)).length === 1 && sublayerExportableItems[0] === sublayer) {
+                                selectedSublayers.push(sublayerExportableItems[0]);
+                            } else {
+                                exportableItems.push.apply(exportableItems, sublayerExportableItems);
+                            }
+                        }
+                    }
+
+                    // Now we do similar thing with page items by finding out which ones are selected and which ones are not.
+
+                    var visiblePageItemCount = 0;
+                    var selectedPageItems = [];
+
+                    for (j = 0, m = layer.pageItems.length; j < m; j++) {
+                        var pageItem = layer.pageItems[j];
+
+                        // Oh Adobe, fucking great consistency with `layer.visible` and `pageItem.hidden`, an infant
+                        // makes more sense than your logic.
+
+                        if (!pageItem.hidden) {
+                            visiblePageItemCount++;
+                            pageItem.selected && selectedPageItems.push(pageItem);
+                        }
+                    }
+
+                    //alert([layer, 'sublayers', visibleSublayerCount, selectedSublayers.length, selectedSublayers, 'items', visiblePageItemCount, selectedPageItems, selectedPageItems.length]);
+
+                    // We export the entire layer when all visible items are selected, otherwise only selected items.
+
+                    if (visiblePageItemCount === 0 && visibleSublayerCount === 0) {
+                        continue;
+                    } else if (selectedPageItems.length === visiblePageItemCount && selectedSublayers.length === visibleSublayerCount) {
+                        exportableItems.push(layer);
+                    } else if (selectedPageItems.length > 0) {
+                        exportableItems.push.apply(exportableItems, selectedPageItems);
+                    } else if (selectedSublayers.length > 0) {
+                        exportableItems.push.apply(exportableItems, selectedSublayers);
+                    }
+                }
+
+                return exportableItems;
+            };
+
+            if (model.layer.target === ExportTarget.ALL) {
+                exportableItems.push.apply(exportableItems, recursor(document.layers, false));
+            } else if (model.layer.target === ExportTarget.SELECTED) {
+                exportableItems.push.apply(exportableItems, recursor(document.layers, true));
+            } else {
+                throw new Error('Unknown layer export target.');
+            }
+
+            for (i = 0, n = exportableItems.length; i < n; i++) {
+                this.exportItem(document, null, exportableItems[i], model.path);
+                progressCallback((i + 1) / n);
             }
         } else {
-            throw new Error();
+            throw new Error('Unknown export category.');
         }
     }
 };
