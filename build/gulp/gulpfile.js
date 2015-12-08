@@ -14,7 +14,7 @@ guild(gulp, {
             source: configuration.path.source,
             destination: configuration.path.product,
             configuration: webpackConfiguration,
-            plugins: [guild.Plugin.DEFAULT, replace(/@see/g, '')]
+            plugins: function () {return [guild.Plugin.DEFAULT, replace(/@see/g, '')]}
         }
     }
 });
