@@ -180,7 +180,7 @@ ExporterModel.prototype = {
             }
         };
 
-        // Normalise / serialise data.
+        // Todo: it would be great to check if it has changed before saving this to avoid document being marked as updated.
 
         XmpUtility.save(document, XMP_NAMESPACE, {json: escape(JSON2.stringify(data))});
 

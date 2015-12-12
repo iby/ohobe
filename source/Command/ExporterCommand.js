@@ -1,4 +1,4 @@
-/*global Artboard,Folder,File,Layer*/
+/*global Artboard,Folder,File,Layer,PageItem,SymbolItem*/
 
 'use strict';
 
@@ -9,6 +9,18 @@ var DataType = require('../Constant/DataType');
 function ExporterCommand() {}
 
 ExporterCommand.prototype = {
+
+    /**
+     * @param item {*}
+     * @returns {string}
+     */
+    getItemName: function (item) {
+        if (item.constructor === SymbolItem) {
+            return item.symbol.name;
+        }
+
+        return item.typename;
+    },
 
     /**
      * @param layer {Layer}
@@ -111,11 +123,9 @@ ExporterCommand.prototype = {
             document.artboards.add(rectangle);
         }
 
-        var filename = item.name === '' ? item.toString() : item.name;
-
         // And finally… unicorns and all the magic things!
 
-        document.exportFile(new File(path + '/' + filename + '.png'), ExportType.PNG24, exportOptions);
+        document.exportFile(new File(path + '/' + (item.name === '' ? this.getItemName(item) : item.name) + '.png'), ExportType.PNG24, exportOptions);
 
         app.undo();
     },
