@@ -180,9 +180,11 @@ ExporterModel.prototype = {
             }
         };
 
-        // Todo: it would be great to check if it has changed before saving this to avoid document being marked as updated.
+        // Check if data has changed before saving this to avoid document being marked as updated.
 
-        XmpUtility.save(document, XMP_NAMESPACE, {json: escape(JSON2.stringify(data))});
+        if ((data = escape(JSON2.stringify(data))) !== XmpUtility.load(document, XMP_NAMESPACE).json) {
+            XmpUtility.save(document, XMP_NAMESPACE, {json: data});
+        }
 
         return this;
     }
