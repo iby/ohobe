@@ -66,8 +66,9 @@ ExporterCommand.prototype = {
      * @param artboard {Artboard|int}
      * @param item {Artboard}
      * @param path {File}
+     * @param [scale] {Object}
      */
-    exportItem: function (document, artboard, item, path) {
+    exportItem: function (document, artboard, item, path, scale) {
 
         // Make sure we have an artboard.
 
@@ -123,9 +124,20 @@ ExporterCommand.prototype = {
             document.artboards.add(rectangle);
         }
 
+        var filename = item.name === '' ? this.getItemName(item) : item.name;
+
+        if (scale != null) {
+
+            // Todo: this makes it a suffix, not prefix…
+
+            exportOptions.horizontalScale = scale.value * 100;
+            exportOptions.verticalScale = scale.value * 100;
+            filename += scale.prefix + scale.value;
+        }
+
         // And finally… unicorns and all the magic things!
 
-        document.exportFile(new File(path + '/' + (item.name === '' ? this.getItemName(item) : item.name) + '.png'), ExportType.PNG24, exportOptions);
+        document.exportFile(new File(path + '/' + filename + '.png'), ExportType.PNG24, exportOptions);
 
         app.undo();
     },
@@ -147,6 +159,7 @@ ExporterCommand.prototype = {
         var exportable;
         var recursor;
         var i, n;
+        var j, m;
 
         // Check what category we're dealing with and export.
 
@@ -261,9 +274,22 @@ ExporterCommand.prototype = {
                 throw new Error('Unknown layer export target.');
             }
 
+            // Todo: take scaling business out into export function, we redoing a huge amount of work for
+            // todo: every scale it's crazy.
+
+            var scales = model.layer.scale && model.layer.scales.length > 0 ? model.layer.scales : [];
+            var scaleCount = scales.length;
+
             for (i = 0, n = exportableItems.length; i < n; i++) {
-                this.exportItem(document, null, exportableItems[i], model.path);
-                progressCallback((i + 1) / n);
+                if (scaleCount > 0) {
+                    for (j = 0, m = scaleCount; j < m; j++) {
+                        this.exportItem(document, null, exportableItems[i], model.path, scales[j]);
+                        progressCallback((i * m + j + 1) / n / m);
+                    }
+                } else {
+                    this.exportItem(document, null, exportableItems[i], model.path);
+                    progressCallback((i + 1) / n);
+                }
             }
         } else {
             throw new Error('Unknown export category.');

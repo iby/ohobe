@@ -176,7 +176,7 @@ function createLayerOptionsBlock(container, model) {
     scalesGroup.scales = model.layer.scales;
     scalesGroup.checkbox = UiUtility.createCheckBox(scalesGroup, 'Multi-scaling (prefix, scale):', {value: model.layer.scale});
     scalesGroup.group = UiUtility.createGroup(scalesGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP, spacing: spacingSmall});
-    scalesGroup.button = UiUtility.createButton(scalesGroup, '+', {size: [controlHeight, controlHeight], enabled: model.artboard.scale});
+    scalesGroup.button = UiUtility.createButton(scalesGroup, '+', {size: [controlHeight, controlHeight], enabled: model.layer.scale});
 
     // Event handling.
 
@@ -236,6 +236,16 @@ function createScalesOptionBlock(container, scale, enabled) {
 
     group.prefixTextfield = UiUtility.createTextfield(group, scale.prefix, {size: [controlHeight * 2, controlHeight], enabled: enabled, justify: 'center'}); // Unicode for ×
     group.scaleTextfield = UiUtility.createTextfield(group, scale.value, {size: [50, controlHeight], enabled: enabled, justify: 'center'});
+
+    // Handle events.
+
+    group.prefixTextfield.onChanging = function () {
+        scale.prefix = this.text;
+    };
+
+    group.scaleTextfield.onChanging = function () {
+        scale.value = this.text;
+    };
 
     return group;
 }
