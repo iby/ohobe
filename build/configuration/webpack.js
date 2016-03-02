@@ -7,18 +7,18 @@
 
 'use strict';
 
-var gulpConfiguration = require('./gulp');
+var gulpConfiguration = require('./Path');
 var path = require('path');
-var glob = require("glob");
+var glob = require('glob');
 
-var context = path.join(gulpConfiguration.path.source);
+var context = path.join(gulpConfiguration.source);
 
 // Setup the main config.
 
 var webpackConfiguration = {
     cache: true,
     context: context,
-    entry: glob.sync(path.join(context, '*.jsx')).reduce(function (object, value) {
+    entry: glob.sync(path.join(context, '*.js')).reduce(function (object, value) {
         object[path.basename(value, path.extname(value))] = value;
         return object;
     }, {}),
@@ -26,7 +26,7 @@ var webpackConfiguration = {
     plugins: [],
 
     resolveLoader: {
-        root: path.join(gulpConfiguration.path.root, 'node_modules')
+        root: path.join(gulpConfiguration.root, 'node_modules')
     },
 
     resolve: {
@@ -34,7 +34,7 @@ var webpackConfiguration = {
     },
 
     output: {
-        path: path.join(gulpConfiguration.path.product),
+        path: path.join(gulpConfiguration.product),
         pathinfo: true,
         filename: '[name].jsx'
     }

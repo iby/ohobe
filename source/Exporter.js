@@ -2,7 +2,8 @@
 
 'use strict';
 
-require('./Utility/Shim');
+// require('./Utility/Shim');
+require('es5-shim');
 
 var ExporterCommand = require('./Command/ExporterCommand');
 var ExporterDialogue = require('./View/ExporterDialogue');

@@ -2,11 +2,13 @@
     "private": true,
     "dependencies": {
         "@ianbytchek/guild": "*",
-        "bluebird": "*",
         "es5-shim": "*",
         "glob": "*",
         "gulp-replace": "*",
         "JSON2": "*",
         "key": "*"
+    },
+    "devDependencies": {
+        "gulp": "*"
     }
 }

@@ -176,7 +176,7 @@ ExporterCommand.prototype = {
                     exportable && this.exportItem(document, i, null, model.path);
                     progressCallback((i + 1) / n);
                 }
-            } else if (model.target === ExportTarget.SELECTED) {
+            } else if (model.artboard.target === ExportTarget.ACTIVE) {
                 this.exportItem(document, null, null, model.path);
                 progressCallback(1);
             } else {
