@@ -67,8 +67,9 @@ ExporterCommand.prototype = {
      * @param item {Artboard}
      * @param path {File}
      * @param [scale] {Object}
+     * @param [options] {Object}
      */
-    exportItem: function (document, artboard, item, path, scale) {
+    exportItem: function (document, artboard, item, path, scale, options) {
 
         // Make sure we have an artboard.
 
@@ -99,7 +100,7 @@ ExporterCommand.prototype = {
 
         var exportOptions = new ExportOptionsPNG24();
         exportOptions.antiAliasing = true;
-        exportOptions.transparency = true;
+        exportOptions.transparency = options == null || options.transparent == null ? false : options.transparent;
         exportOptions.artBoardClipping = true;
 
         // Not this can only go two ways – we're dealing with an entire artboard or a selection. In first case we simply export file
@@ -173,11 +174,11 @@ ExporterCommand.prototype = {
                 for (i = 0, n = artboards.length; i < n; i++) {
                     exportable = onlyWithPrefix == null || artboards[i].name.slice(0, onlyWithPrefixLength) === onlyWithPrefix;
                     exportable = skipWithPrefix == null || artboards[i].name.slice(0, skipWithPrefixLength) !== skipWithPrefix;
-                    exportable && this.exportItem(document, i, null, model.path);
+                    exportable && this.exportItem(document, i, null, model.path, null, model.artboard.image);
                     progressCallback((i + 1) / n);
                 }
             } else if (model.artboard.target === ExportTarget.ACTIVE) {
-                this.exportItem(document, null, null, model.path);
+                this.exportItem(document, null, null, model.path, null, model.artboard.image);
                 progressCallback(1);
             } else {
                 throw new Error('Unknown artboard export target.');
@@ -283,11 +284,11 @@ ExporterCommand.prototype = {
             for (i = 0, n = exportableItems.length; i < n; i++) {
                 if (scaleCount > 0) {
                     for (j = 0, m = scaleCount; j < m; j++) {
-                        this.exportItem(document, null, exportableItems[i], model.path, scales[j]);
+                        this.exportItem(document, null, exportableItems[i], model.path, scales[j], model.layer.image);
                         progressCallback((i * m + j + 1) / n / m);
                     }
                 } else {
-                    this.exportItem(document, null, exportableItems[i], model.path);
+                    this.exportItem(document, null, exportableItems[i], model.path, null, model.layer.image);
                     progressCallback((i + 1) / n);
                 }
             }

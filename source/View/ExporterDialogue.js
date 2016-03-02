@@ -109,48 +109,61 @@ function createOptionsBlock(container, model) {
 function createArtboardOptionsBlock(container, model) {
     var group = UiUtility.createGroup(container, Orientation.ROW, {alignChildren: Alignment.LEFT_TOP});
 
-    var leftGroupProperties = {minimumSize: [200, 0], alignment: Alignment.LEFT_FILL, alignChildren: Alignment.LEFT_TOP};
-    var rightGroupProperties = {minimumSize: [200, 0], alignment: Alignment.RIGHT_FILL, alignChildren: Alignment.LEFT_TOP};
+    // Create three columns with artboard, scaling and image options.
 
-    var leftGroup = UiUtility.createGroup(group, Orientation.COLUMN, leftGroupProperties);
-    var rightGroup = UiUtility.createGroup(group, Orientation.COLUMN, rightGroupProperties);
-    var targetGroup = UiUtility.createGroup(leftGroup, Orientation.COLUMN, {alignment: Alignment.FILL_TOP, alignChildren: Alignment.FILL_TOP});
-    var scalesGroup = UiUtility.createGroup(rightGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP});
+    var artboardWrapperProperties = {minimumSize: [200, 0], alignment: Alignment.LEFT_FILL, alignChildren: Alignment.LEFT_TOP};
+    var artboardWrapper = UiUtility.createGroup(group, Orientation.COLUMN, artboardWrapperProperties);
+    var artboardGroup = UiUtility.createGroup(artboardWrapper, Orientation.COLUMN, {alignment: Alignment.FILL_TOP, alignChildren: Alignment.FILL_TOP});
 
-    UiUtility.createStaticText(targetGroup, 'Artboards:');
-    targetGroup.allButton = UiUtility.createRadioButton(targetGroup, 'All', {value: model.artboard.target === ExportTarget.ALL});
-    targetGroup.activeButton = UiUtility.createRadioButton(targetGroup, 'Active', {value: model.artboard.target === ExportTarget.ACTIVE});
-    targetGroup.onlyWithPrefixCheckbox = UiUtility.createCheckBox(targetGroup, 'Only with + prefix', {value: model.artboard.onlyWithPrefix});
-    targetGroup.skipWithPrefixCheckbox = UiUtility.createCheckBox(targetGroup, 'Skip with - prefix', {value: model.artboard.skipWithPrefix});
+    var imageWrapperProperties = {minimumSize: [200, 0], alignment: Alignment.RIGHT_FILL, alignChildren: Alignment.LEFT_TOP};
+    var imageWrapper = UiUtility.createGroup(group, Orientation.COLUMN, imageWrapperProperties);
+    var imageGroup = UiUtility.createGroup(imageWrapper, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP});
 
-    scalesGroup.scales = model.artboard.scales;
-    scalesGroup.checkbox = UiUtility.createCheckBox(scalesGroup, 'Multi-scaling (prefix, scale):', {value: model.artboard.scale});
-    scalesGroup.group = UiUtility.createGroup(scalesGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP, spacing: spacingSmall});
-    scalesGroup.button = UiUtility.createButton(scalesGroup, '+', {size: [controlHeight, controlHeight], enabled: model.artboard.scale});
+    var scaleWrapperProperties = {minimumSize: [200, 0], alignment: Alignment.RIGHT_FILL, alignChildren: Alignment.LEFT_TOP};
+    var scaleWrapper = UiUtility.createGroup(group, Orientation.COLUMN, scaleWrapperProperties);
+    var scaleGroup = UiUtility.createGroup(scaleWrapper, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP});
+
+    // Create their contents.
+
+    UiUtility.createStaticText(artboardGroup, 'Artboards:');
+    artboardGroup.allButton = UiUtility.createRadioButton(artboardGroup, 'All', {value: model.artboard.target === ExportTarget.ALL});
+    artboardGroup.activeButton = UiUtility.createRadioButton(artboardGroup, 'Active', {value: model.artboard.target === ExportTarget.ACTIVE});
+    artboardGroup.onlyWithPrefixCheckbox = UiUtility.createCheckBox(artboardGroup, 'Only with + prefix', {value: model.artboard.onlyWithPrefix});
+    artboardGroup.skipWithPrefixCheckbox = UiUtility.createCheckBox(artboardGroup, 'Skip with - prefix', {value: model.artboard.skipWithPrefix});
+
+    UiUtility.createStaticText(imageGroup, 'Image properties:');
+    imageGroup.checkbox = UiUtility.createCheckBox(imageGroup, 'Transparent', {value: model.artboard.image.transparent});
+
+    scaleGroup.scales = model.artboard.scales;
+    scaleGroup.checkbox = UiUtility.createCheckBox(scaleGroup, 'Multi-scaling (prefix, scale):', {value: model.artboard.scale});
+    scaleGroup.group = UiUtility.createGroup(scaleGroup, Orientation.COLUMN, {alignChildren: Alignment.LEFT_TOP, spacing: spacingSmall});
+    scaleGroup.button = UiUtility.createButton(scaleGroup, '+', {size: [controlHeight, controlHeight], enabled: model.artboard.scale});
 
     // Event handling.
 
-    targetGroup.allButton.onClick = function () { model.artboard.target = ExportTarget.ALL };
-    targetGroup.activeButton.onClick = function () { model.artboard.target = ExportTarget.ACTIVE };
-    targetGroup.onlyWithPrefixCheckbox.onClick = function () { model.artboard.onlyWithPrefix = this.value };
-    targetGroup.skipWithPrefixCheckbox.onClick = function () { model.artboard.skipWithPrefix = this.value };
+    artboardGroup.allButton.onClick = function () { model.artboard.target = ExportTarget.ALL };
+    artboardGroup.activeButton.onClick = function () { model.artboard.target = ExportTarget.ACTIVE };
+    artboardGroup.onlyWithPrefixCheckbox.onClick = function () { model.artboard.onlyWithPrefix = this.value };
+    artboardGroup.skipWithPrefixCheckbox.onClick = function () { model.artboard.skipWithPrefix = this.value };
 
-    scalesGroup.checkbox.onClick = function () {
-        scalesGroup.button.enabled = model.artboard.scale = this.value;
-        updateScalesOptionBlocks(scalesGroup.group, scalesGroup.scales, model.artboard.scale);
+    scaleGroup.checkbox.onClick = function () {
+        scaleGroup.button.enabled = model.artboard.scale = this.value;
+        updateScalesOptionBlocks(scaleGroup.group, scaleGroup.scales, model.artboard.scale);
         this.window.layout.layout(true);
     };
 
     // Todo: use the previous prefix when adding it.
 
-    scalesGroup.button.onClick = function () {
+    scaleGroup.button.onClick = function () {
         createScalesOptionBlock(this.parent.group, null, true);
         this.window.layout.layout(true);
     };
 
+    imageGroup.checkbox.onClick = function () { model.artboard.image.transparent = this.value };
+
     // Finally…
 
-    createScalesOptionBlocks(scalesGroup.group, scalesGroup.scales, model.artboard.scale);
+    createScalesOptionBlocks(scaleGroup.group, scaleGroup.scales, model.artboard.scale);
 
     return group;
 }
