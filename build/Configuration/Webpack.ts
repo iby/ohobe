@@ -5,20 +5,15 @@
  * {@link http://github.com/webpack/example-app/blob/master/webpack.config.js}
  */
 
-'use strict';
+import {configuration as pathConfiguration} from './Path';
 
-var gulpConfiguration = require('./Path');
-var path = require('path');
-var glob = require('glob');
+import glob = require('glob');
+import path = require('path');
 
-var context = path.join(gulpConfiguration.source);
-
-// Setup the main config.
-
-var webpackConfiguration = {
+export var configuration = {
     cache: true,
-    context: context,
-    entry: glob.sync(path.join(context, '*.js')).reduce(function (object, value) {
+    context: pathConfiguration.source,
+    entry: glob.sync(path.join(pathConfiguration.source, '*.js')).reduce(function (object, value) {
         object[path.basename(value, path.extname(value))] = value;
         return object;
     }, {}),
@@ -26,7 +21,7 @@ var webpackConfiguration = {
     plugins: [],
 
     resolveLoader: {
-        root: path.join(gulpConfiguration.root, 'node_modules')
+        root: path.join(pathConfiguration.root, 'node_modules')
     },
 
     resolve: {
@@ -34,10 +29,8 @@ var webpackConfiguration = {
     },
 
     output: {
-        path: path.join(gulpConfiguration.product),
+        path: path.join(pathConfiguration.product),
         pathinfo: true,
         filename: '[name].jsx'
     }
 };
-
-module.exports = webpackConfiguration;
